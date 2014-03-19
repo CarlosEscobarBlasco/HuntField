@@ -32,22 +32,28 @@ public class Duck extends Thread implements FieldItem {
         return 'D';
     }
 
+    private Position calculatePosition(int number) {
+        switch (number) {
+            case 0:
+                return new Position(position.getX() + 1, position.getY());
+            case 1:
+                return new Position(position.getX(), position.getY() + 1);
+            case 2:
+                return new Position(position.getX() - 1, position.getY());
+            case 3:
+                return new Position(position.getX(), position.getY() - 1);
+        }
+        return null;
+    }
+
     @Override
     public void run() {
         while (isAlive) {
-            Position toPosition;
+
             int direction = new Random().nextInt(4);
-            if (direction == 0) {
-                toPosition = new Position(position.getX() + 1, position.getY());
-            } else if (direction == 1) {
-                toPosition = new Position(position.getX(), position.getY() + 1);
-            } else if (direction == 2) {
-                toPosition = new Position(position.getX() - 1, position.getY());
-            } else {
-                toPosition = new Position(position.getX(), position.getY() - 1);
-            }
+            Position toPosition = calculatePosition(direction);
             try {
-                sleep(new Random().nextInt(3)*100);
+                sleep(new Random().nextInt(3) * 100);
             } catch (InterruptedException ex) {
             }
             if (field.moveItem(this, position, toPosition)) {

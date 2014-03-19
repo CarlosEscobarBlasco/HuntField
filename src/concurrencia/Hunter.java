@@ -25,6 +25,7 @@ public class Hunter extends Thread implements FieldItem {
     @Override
     public boolean fired() {
         isAlive = false;
+        System.out.println("mori");
         field.removeItem(this, position);
         return false;
     }
@@ -34,22 +35,28 @@ public class Hunter extends Thread implements FieldItem {
         return 'H';
     }
 
+    private Position calculatePosition(int number) {
+        switch (number) {
+            case 0:
+                return new Position(position.getX() + 1, position.getY());
+            case 1:
+                return new Position(position.getX(), position.getY() + 1);
+            case 2:
+                return new Position(position.getX() - 1, position.getY());
+            case 3:
+                return new Position(position.getX(), position.getY() - 1);
+        }
+        return null;
+    }
+
     @Override
     public void run() {
-        Position firePosition;
+
         int direction = new Random().nextInt(4);
-        if (direction == 0) {
-            firePosition = new Position(position.getX() + 1, position.getY());
-        } else if (direction == 1) {
-            firePosition = new Position(position.getX(), position.getY() + 1);;
-        } else if (direction == 2) {
-            firePosition = new Position(position.getX() - 1, position.getY());
-        } else {
-            firePosition = new Position(position.getX(), position.getY() - 1);
-        }
+        Position firePosition = calculatePosition(direction);
         while (isAlive) {
             try {
-                sleep(new Random().nextInt(1)*100);
+                sleep(new Random().nextInt(1) * 100);
             } catch (InterruptedException ex) {
             }
             if (field.shot(firePosition)) {
@@ -57,17 +64,8 @@ public class Hunter extends Thread implements FieldItem {
                 field.moveItem(this, position, firePosition);
                 position = firePosition;
             }
-            direction++;
-            if (direction == 0) {
-                firePosition = new Position(position.getX() + 1, position.getY());
-            } else if (direction == 1) {
-                firePosition = new Position(position.getX(), position.getY() - 1);;
-            } else if (direction == 2) {
-                firePosition = new Position(position.getX() - 1, position.getY());
-            } else {
-                firePosition = new Position(position.getX(), position.getY() + 1);
-                direction = -1;
-            }
+            direction = (direction < 3) ? direction + 1 : 0;
+            firePosition = calculatePosition(direction);
         }
     }
 }
