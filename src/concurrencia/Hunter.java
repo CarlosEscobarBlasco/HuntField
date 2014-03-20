@@ -19,15 +19,16 @@ public class Hunter extends Thread implements FieldItem {
                 searchPosition = false;
             }
         }
+    }
 
+    public int hunted() {
+        return acurateShots;
     }
 
     @Override
     public boolean fired() {
         isAlive = false;
-        System.out.println("mori");
-        field.removeItem(this, position);
-        return false;
+        return field.removeItem(this, position);
     }
 
     @Override
@@ -51,15 +52,18 @@ public class Hunter extends Thread implements FieldItem {
 
     @Override
     public void run() {
-
+        try {
+                sleep(2000);
+            } catch (InterruptedException ex) {
+            }
         int direction = new Random().nextInt(4);
         Position firePosition = calculatePosition(direction);
         while (isAlive) {
             try {
-                sleep(new Random().nextInt(1) * 100);
+                sleep(new Random().nextInt(2) * 100);
             } catch (InterruptedException ex) {
             }
-            if (field.shot(firePosition)) {
+            if (isDuck(firePosition) & field.shot(firePosition)) {
                 acurateShots++;
                 field.moveItem(this, position, firePosition);
                 position = firePosition;
@@ -67,5 +71,12 @@ public class Hunter extends Thread implements FieldItem {
             direction = (direction < 3) ? direction + 1 : 0;
             firePosition = calculatePosition(direction);
         }
+    }
+    
+    public boolean isDuck(Position position){
+        if (position.getX() >= 0 && position.getX() < field.getXLength() && position.getY() >= 0 && position.getY() < field.getYLength()) {
+            if(field.getItemType(position)=='D')return true;
+        }
+        return false;
     }
 }

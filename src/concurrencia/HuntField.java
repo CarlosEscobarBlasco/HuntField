@@ -23,48 +23,40 @@ public class HuntField {
     //Se le pasa un elemento a situar en el tablero y la posición. 
     //La posición se pasa en forma de objeto de la clase Position. 
     //Si la posición es errónea, o está ocupada, o el objeto ya está en otra posición, devuelve falso.
-    public boolean setItem(FieldItem item, Position position) {
-        synchronized (field) {
-            if (insideBounds(position) && this.getItemType(position) == ' ' && !isPositioned(item)) {
-                field[position.getX()][position.getY()] = item;
-                return true;
-            }
-            return false;
+    public synchronized boolean setItem(FieldItem item, Position position) {
+        if (insideBounds(position) && this.getItemType(position) == ' ' && !isPositioned(item)) {
+            field[position.getX()][position.getY()] = item;
+            return true;
         }
+        return false;
     }
 
     //Se hace un disparo sobre una posición, pasada por parámetro. 
     //Si la posición es errónea o está vacía devuelve falso, en otro caso, 
     //devuelve el resultado de llamar a fired en el objeto situado en la posición correspondiente.
-    public boolean shot(Position position) {
-        synchronized (field) {
-            if (insideBounds(position) && getItemType(position) != ' ') {
-                return field[position.getX()][position.getY()].fired();
-            }
-            return false;
+    public synchronized boolean shot(Position position) {
+        if (insideBounds(position) && getItemType(position) != ' ') {
+            return field[position.getX()][position.getY()].fired();
         }
+        return false;
     }
 
     //Se le pasa un objeto y la posición en que está en el tablero. 
     //Elimina del tablero el objeto en la posición pasada, si coincide con el objeto pasado.
-    public boolean removeItem(FieldItem item, Position position) {
-        synchronized (field) {
-            if (insideBounds(position) && this.getItemType(position) == item.getType()) { //MIRAR EL MISMO OBJETO, NO SOLO QUE SEA UN PATO
-                field[position.getX()][position.getY()] = null;
-                return true;
-            }
-            return false;
+    public synchronized boolean removeItem(FieldItem item, Position position) {
+        if (insideBounds(position) && this.getItemType(position) == item.getType()) { //MIRAR EL MISMO OBJETO, NO SOLO QUE SEA UN PATO
+            field[position.getX()][position.getY()] = null;
+            return true;
         }
+        return false;
     }
 
     //Devuelve el carácter que representa el tipo del objeto en la posición pasada o un espacio, en otro caso.
-    public char getItemType(Position position) {
-        synchronized (field) {
-            if (field[position.getX()][position.getY()] == null) {
-                return ' ';
-            }
-            return field[position.getX()][position.getY()].getType();
+    public synchronized char getItemType(Position position) {
+        if (field[position.getX()][position.getY()] == null) {
+            return ' ';
         }
+        return field[position.getX()][position.getY()].getType();
     }
 
     //Se le pasa un objeto en el tablero su posición actual y la nueva. 
@@ -72,19 +64,25 @@ public class HuntField {
     //Durante, como mucho, un segundo, se intenta mover a la nueva posición. 
     //El movimiento se producirá cuando la posición destino esté vacía. 
     //Si se logra mover devuelve verdadero, si no, se devuelve falso.
-    public boolean moveItem(FieldItem item, Position fromPosition, Position toPosition) {
+    public synchronized boolean moveItem(FieldItem item, Position fromPosition, Position toPosition) {
         if (insideBounds(fromPosition) && insideBounds(toPosition)) {
-            double compare = System.nanoTime() + 1000000000;
-            double count = System.nanoTime();
-            while (count < compare) {
-                count = System.nanoTime();
-                synchronized (field) {
-                    if (item == field[fromPosition.getX()][fromPosition.getY()] && null == field[toPosition.getX()][toPosition.getY()]) {
-                        field[fromPosition.getX()][fromPosition.getY()] = null;
-                        field[toPosition.getX()][toPosition.getY()] = item;
-                        return true;
+            int transcurredTime = 0;
+            while (getItemType(toPosition) != ' ') {
+                try {
+                    long time = System.nanoTime();
+                    wait(0, 999999 - transcurredTime);
+                    transcurredTime += System.nanoTime() - time;
+                    if (transcurredTime > 1000000) {
+                        return false;
                     }
+                } catch (InterruptedException ex) {
                 }
+            }
+            if (item == field[fromPosition.getX()][fromPosition.getY()]) {
+                field[fromPosition.getX()][fromPosition.getY()] = null;
+                field[toPosition.getX()][toPosition.getY()] = item;
+                notifyAll();
+                return true;
             }
         }
         return false;
@@ -110,7 +108,7 @@ public class HuntField {
         }
         return false;
     }
-    
+
     //Comprueba si el item pasado ya esta colocado dentro del HuntField
     private boolean isPositioned(FieldItem item) {
         for (int i = 0; i < field.length; i++) {
@@ -132,7 +130,7 @@ public class HuntField {
         String result = "";
         for (int i = 0; i < field.length; i++) {
             for (int j = 0; j < field[0].length; j++) {
-                result = result +"["+ this.getItemType(new Position(i, j)) +"]";
+                result = result + "[" + this.getItemType(new Position(i, j)) + "]";
             }
             result = result + "\n";
         }
